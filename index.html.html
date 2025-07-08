@@ -1,0 +1,2506 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>학급 쇼핑몰</title>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #fef3c7 0%, #fed7aa 100%);
+            min-height: 100vh;
+            color: #92400e;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .mobile-container {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(146, 64, 14, 0.1);
+            margin-bottom: 20px;
+            border: 2px solid #fde68a;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 12px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+        }
+
+        .btn:disabled {
+            background: #d1d5db;
+            color: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #92400e 0%, #451a03 100%);
+            box-shadow: 0 4px 15px rgba(146, 64, 14, 0.3);
+        }
+
+        .btn-secondary:hover {
+            box-shadow: 0 6px 20px rgba(146, 64, 14, 0.4);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: #92400e;
+            border: 2px solid #fde68a;
+            box-shadow: none;
+        }
+
+        .btn-outline:hover {
+            background: #fef3c7;
+            border-color: #f59e0b;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+            width: auto;
+            margin: 0 4px 0 0;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3);
+        }
+
+        .btn-danger:hover {
+            box-shadow: 0 6px 20px rgba(220, 38, 38, 0.4);
+        }
+
+        .input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #fde68a;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 12px;
+            background: #fffbeb;
+            color: #92400e;
+        }
+
+        .input:focus {
+            outline: none;
+            border-color: #f59e0b;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+        }
+
+        .pin-input {
+            font-size: 24px;
+            text-align: center;
+            letter-spacing: 8px;
+            font-weight: bold;
+        }
+
+        .pin-container {
+            text-align: center;
+        }
+
+        .points-display {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            margin-bottom: 24px;
+            border: 3px solid #f59e0b;
+        }
+
+        .points-number {
+            font-size: 48px;
+            font-weight: bold;
+            color: #92400e;
+            margin-bottom: 8px;
+        }
+
+        .points-label {
+            font-size: 16px;
+            color: #d97706;
+            font-weight: 600;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .shop-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+        }
+
+        .student-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 12px;
+        }
+
+        .student-btn {
+            background: white;
+            border: 2px solid #fde68a;
+            padding: 16px 12px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #92400e;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .student-btn:hover {
+            background: #fef3c7;
+            border-color: #f59e0b;
+            transform: translateY(-2px);
+        }
+
+        /* 컴팩트한 상점 카드 */
+        .shop-item-card {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 4px 15px rgba(146, 64, 14, 0.1);
+            border: 2px solid #fde68a;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .shop-item-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(146, 64, 14, 0.15);
+            border-color: #f59e0b;
+        }
+
+        .shop-item-image {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin: 0 auto 12px;
+            background: #f3f4f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #fde68a;
+        }
+
+        .shop-item-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 6px;
+        }
+
+        .shop-item-emoji {
+            font-size: 32px;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .shop-item-price {
+            font-size: 20px;
+            font-weight: bold;
+            color: #059669;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .shop-item-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #92400e;
+            text-align: center;
+            margin-bottom: 8px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .shop-item-status {
+            text-align: center;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+
+        .status-available {
+            background: #dcfce7;
+            color: #059669;
+        }
+
+        .status-sold {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        /* 내 물건 가로 레이아웃 */
+        .my-item-card {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 4px 15px rgba(146, 64, 14, 0.1);
+            border: 2px solid #fde68a;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .my-item-card.sold {
+            opacity: 0.7;
+            background: #f9fafb;
+        }
+
+        .my-item-image {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 8px;
+            background: #f3f4f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #fde68a;
+            flex-shrink: 0;
+        }
+
+        .my-item-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 6px;
+        }
+
+        .my-item-emoji {
+            font-size: 24px;
+        }
+
+        .my-item-info {
+            flex: 1;
+        }
+
+        .my-item-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #92400e;
+            margin-bottom: 4px;
+        }
+
+        .my-item-price {
+            font-size: 16px;
+            font-weight: bold;
+            color: #059669;
+            margin-bottom: 4px;
+        }
+
+        .my-item-status {
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .my-item-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .student-points {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #fde68a;
+        }
+
+        .student-points:last-child {
+            border-bottom: none;
+        }
+
+        .transaction-item {
+            padding: 12px 0;
+            border-bottom: 1px solid #fde68a;
+        }
+
+        .transaction-item:last-child {
+            border-bottom: none;
+        }
+
+        .back-btn {
+            background: transparent;
+            border: none;
+            color: #92400e;
+            font-size: 16px;
+            cursor: pointer;
+            margin-bottom: 16px;
+            padding: 8px;
+            border-radius: 8px;
+            transition: background 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: #fef3c7;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #d97706;
+        }
+
+        .online-indicator {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: #059669;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 1000;
+        }
+
+        .online-indicator.offline {
+            background: #dc2626;
+        }
+
+        .photo-upload {
+            border: 2px dashed #fde68a;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #fffbeb;
+        }
+
+        .photo-upload:hover {
+            border-color: #f59e0b;
+            background: #fef3c7;
+        }
+
+        .photo-upload.has-image {
+            border-color: #059669;
+            background: #ecfdf5;
+        }
+
+        .photo-preview {
+            max-width: 200px;
+            max-height: 200px;
+            margin: 0 auto;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .category-btn {
+            background: white;
+            border: 2px solid #fde68a;
+            padding: 12px 8px;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #92400e;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .category-btn:hover {
+            background: #fef3c7;
+            border-color: #f59e0b;
+        }
+
+        .category-btn.selected {
+            background: #f59e0b;
+            color: white;
+            border-color: #d97706;
+        }
+
+        .filter-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-tab {
+            background: white;
+            border: 2px solid #fde68a;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            color: #92400e;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .filter-tab:hover {
+            background: #fef3c7;
+            border-color: #f59e0b;
+        }
+
+        .filter-tab.active {
+            background: #f59e0b;
+            color: white;
+            border-color: #d97706;
+        }
+
+        /* 모달 스타일 */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #92400e;
+        }
+
+        .modal-image {
+            width: 100%;
+            max-height: 300px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+
+        .modal-emoji {
+            font-size: 64px;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .shop-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            }
+            
+            .points-number {
+                font-size: 36px;
+            }
+
+            .filter-tabs {
+                justify-content: center;
+            }
+
+            .filter-tab {
+                font-size: 12px;
+                padding: 6px 12px;
+            }
+
+            .my-item-card {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .my-item-image {
+                align-self: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="loading">
+            <h2>🔄 학급 쇼핑몰 로딩 중...</h2>
+            <p>잠시만 기다려주세요</p>
+        </div>
+    </div>
+    
+    <div class="online-indicator" id="onlineStatus">🟢 온라인</div>
+
+    <script>
+        // Firebase 설정
+        const firebaseConfig = {
+            apiKey: "AIzaSyAdX_kxEdXd8loilPuQsHeRj2zxXGHAKx8",
+            authDomain: "classroom-market-e1923.firebaseapp.com",
+            projectId: "classroom-market-e1923",
+            storageBucket: "classroom-market-e1923.firebasestorage.app",
+            messagingSenderId: "55093541170",
+            appId: "1:55093541170:web:8b275f6d84b928cf5a7f2b"
+        };
+
+        // Firebase 초기화
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const storage = firebase.storage();
+
+        // 카테고리 정의
+        const CATEGORIES = [
+            { id: 'electronics', name: '📱 전자기기', emoji: '📱' },
+            { id: 'stationery', name: '📚 학용품', emoji: '📚' },
+            { id: 'clothing', name: '👕 의류 및 잡화', emoji: '👕' },
+            { id: 'toys', name: '🧸 장난감', emoji: '🧸' },
+            { id: 'books', name: '📖 도서', emoji: '📖' },
+            { id: 'etc', name: '📦 기타', emoji: '📦' }
+        ];
+
+        class ClassMarket {
+            constructor() {
+                this.currentPage = 'home';
+                this.currentUser = null;
+                this.selectedStudent = null;
+                this.selectedStudentForTransactions = null;
+                this.selectedCategory = '';
+                this.selectedImageFile = null;
+                this.shopCategoryFilter = 'all';
+                this.editingItem = null;
+                
+                // 교사 설정 (기본값)
+                this.teacherSettings = {
+                    className: '우리 반',
+                    pin: '0000',
+                    studentCount: 25,
+                    defaultPoints: 100,
+                    isFirstTime: true
+                };
+                
+                // 실시간 데이터
+                this.students = [];
+                this.items = [];
+                this.transactions = [];
+                
+                // 실시간 리스너들
+                this.unsubscribers = [];
+                
+                this.init();
+            }
+            
+            // 초기화
+            async init() {
+                try {
+                    await this.loadTeacherSettings();
+                    this.setupRealtimeListeners();
+                    this.render();
+                    this.updateOnlineStatus(true);
+                } catch (error) {
+                    console.error('초기화 오류:', error);
+                    this.updateOnlineStatus(false);
+                }
+            }
+            
+            // 온라인 상태 업데이트
+            updateOnlineStatus(isOnline) {
+                const indicator = document.getElementById('onlineStatus');
+                if (indicator) {
+                    if (isOnline) {
+                        indicator.textContent = '🟢 온라인';
+                        indicator.className = 'online-indicator';
+                    } else {
+                        indicator.textContent = '🔴 오프라인';
+                        indicator.className = 'online-indicator offline';
+                    }
+                }
+            }
+            
+            // 교사 설정 로드
+            async loadTeacherSettings() {
+                try {
+                    const doc = await db.collection('settings').doc('teacher').get();
+                    if (doc.exists) {
+                        this.teacherSettings = { ...this.teacherSettings, ...doc.data() };
+                    } else {
+                        // 기본 설정 저장
+                        await this.saveTeacherSettingsToDb();
+                        await this.createDefaultStudents();
+                    }
+                } catch (error) {
+                    console.error('교사 설정 로드 오류:', error);
+                }
+            }
+            
+            // 기본 학생 생성
+            async createDefaultStudents() {
+                const batch = db.batch();
+                
+                for (let i = 1; i <= this.teacherSettings.studentCount; i++) {
+                    const studentRef = db.collection('students').doc(`student_${i}`);
+                    batch.set(studentRef, {
+                        id: i,
+                        name: `학생${i}`,
+                        pin: String(1000 + i - 1).padStart(4, '0'),
+                        points: this.teacherSettings.defaultPoints,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+                
+                await batch.commit();
+            }
+            
+            // 실시간 리스너 설정
+            setupRealtimeListeners() {
+                // 학생 데이터 실시간 업데이트
+                const studentsUnsubscriber = db.collection('students')
+                    .orderBy('id')
+                    .onSnapshot((snapshot) => {
+                        this.students = [];
+                        snapshot.forEach((doc) => {
+                            this.students.push({ docId: doc.id, ...doc.data() });
+                        });
+                        
+                        // 현재 사용자 정보 업데이트
+                        if (this.currentUser && this.currentUser.id !== 'teacher') {
+                            const updatedUser = this.students.find(s => s.id === this.currentUser.id);
+                            if (updatedUser) {
+                                this.currentUser = { ...this.currentUser, ...updatedUser };
+                            }
+                        }
+                        
+                        this.render();
+                    });
+                
+                // 상품 데이터 실시간 업데이트
+                const itemsUnsubscriber = db.collection('items')
+                    .orderBy('createdAt', 'desc')
+                    .onSnapshot((snapshot) => {
+                        this.items = [];
+                        snapshot.forEach((doc) => {
+                            this.items.push({ docId: doc.id, ...doc.data() });
+                        });
+                        this.render();
+                    });
+                
+                // 거래 내역 실시간 업데이트
+                const transactionsUnsubscriber = db.collection('transactions')
+                    .orderBy('timestamp', 'desc')
+                    .onSnapshot((snapshot) => {
+                        this.transactions = [];
+                        snapshot.forEach((doc) => {
+                            this.transactions.push({ docId: doc.id, ...doc.data() });
+                        });
+                        this.render();
+                    });
+                
+                this.unsubscribers.push(studentsUnsubscriber, itemsUnsubscriber, transactionsUnsubscriber);
+            }
+            
+            // 이미지 압축
+            async compressImage(file, maxWidth = 800, quality = 0.7) {
+                return new Promise((resolve) => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    const img = new Image();
+                    
+                    img.onload = () => {
+                        // 비율 유지하면서 크기 조정
+                        const ratio = Math.min(maxWidth / img.width, maxWidth / img.height);
+                        canvas.width = img.width * ratio;
+                        canvas.height = img.height * ratio;
+                        
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        
+                        canvas.toBlob(resolve, 'image/jpeg', quality);
+                    };
+                    
+                    img.src = URL.createObjectURL(file);
+                });
+            }
+            
+            // 이미지 업로드
+            async uploadImage(file) {
+                try {
+                    // 이미지 압축
+                    const compressedFile = await this.compressImage(file);
+                    
+                    // 파일명 생성 (timestamp + random)
+                    const fileName = `items/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg`;
+                    
+                    // Firebase Storage에 업로드
+                    const storageRef = storage.ref().child(fileName);
+                    const snapshot = await storageRef.put(compressedFile);
+                    
+                    // 다운로드 URL 가져오기
+                    const downloadURL = await snapshot.ref.getDownloadURL();
+                    
+                    return downloadURL;
+                } catch (error) {
+                    console.error('이미지 업로드 오류:', error);
+                    throw error;
+                }
+            }
+            
+            // 페이지 설정
+            setPage(page) {
+                this.currentPage = page;
+                this.selectedImageFile = null;
+                if (page !== 'edit-item') {
+	            this.selectedCategory = ' ';
+	            this.editingItem = null;
+		}
+
+                this.render();
+            }
+            
+            // 사용자 설정
+            setUser(user) {
+                this.currentUser = user;
+            }
+            
+            // PIN 확인
+            verifyPin(studentId, pin) {
+                const student = this.students.find(s => s.id === studentId);
+                return student && student.pin === pin;
+            }
+            
+            // 상품 추가
+            async addItem(title, description, price, category, imageUrl = null) {
+                if (!title || !price || !category) return false;
+                
+                try {
+                    // 카테고리별 자동 이모지 할당
+                    const categoryData = CATEGORIES.find(c => c.id === category);
+                    const emoji = categoryData ? categoryData.emoji : '📦';
+                    
+                    await db.collection('items').add({
+                        title,
+                        description: description || '',
+                        price: parseInt(price),
+                        emoji,
+                        category,
+                        imageUrl,
+                        sellerId: this.currentUser.id,
+                        sellerName: this.currentUser.name,
+                        available: true,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    return true;
+                } catch (error) {
+                    console.error('상품 등록 오류:', error);
+                    return false;
+                }
+            }
+            
+            // 상품 수정
+            async updateItem(itemId, title, description, price, category, imageUrl = null) {
+                try {
+                    const categoryData = CATEGORIES.find(c => c.id === category);
+                    const emoji = categoryData ? categoryData.emoji : '📦';
+                    
+                    const updateData = {
+                        title,
+                        description: description || '',
+                        price: parseInt(price),
+                        emoji,
+                        category,
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    };
+                    
+                    if (imageUrl !== null) {
+                        updateData.imageUrl = imageUrl;
+                    }
+                    
+                    await db.collection('items').doc(itemId).update(updateData);
+                    return true;
+                } catch (error) {
+                    console.error('상품 수정 오류:', error);
+                    return false;
+                }
+            }
+            
+            // 상품 삭제
+            async deleteItem(itemId) {
+                if (!confirm('정말로 이 상품을 삭제하시겠습니까?')) {
+                    return false;
+                }
+                
+                try {
+                    await db.collection('items').doc(itemId).delete();
+                    return true;
+                } catch (error) {
+                    console.error('상품 삭제 오류:', error);
+                    return false;
+                }
+            }
+            
+            // 상품 구매
+            async buyItem(item) {
+                if (!item.available || item.sellerId === this.currentUser.id) return false;
+                if (this.currentUser.points < item.price) {
+                    alert('포인트가 부족합니다!');
+                    return false;
+                }
+                // 구매 확인 팝업
+		const confirmMessage = `정말로 구매하시겠습니까?\n\n상품: ${item.title}\n가격: ${item.price.toLocaleString()}P\n판매자: ${item.sellerName}\n\n구매 후 ${this.currentUser.points - item.price}P가 남습니다.`;
+    
+    		if (!confirm(confirmMessage)) {
+                   return false;  // 사용자가 취소를 선택한 경우
+ 		}
+
+
+                try {
+                    // 트랜잭션으로 동시성 문제 해결
+                    await db.runTransaction(async (transaction) => {
+                        // 상품 상태 확인
+                        const itemRef = db.collection('items').doc(item.docId);
+                        const itemDoc = await transaction.get(itemRef);
+                        
+                        if (!itemDoc.exists || !itemDoc.data().available) {
+                            throw new Error('이미 판매된 상품입니다.');
+                        }
+                        
+                        // 구매자, 판매자 정보 가져오기
+                        const buyer = this.students.find(s => s.id === this.currentUser.id);
+                        const seller = this.students.find(s => s.id === item.sellerId);
+                        
+                        if (!buyer || !seller) {
+                            throw new Error('사용자 정보를 찾을 수 없습니다.');
+                        }
+                        
+                        if (buyer.points < item.price) {
+                            throw new Error('포인트가 부족합니다.');
+                        }
+                        
+                        // 포인트 업데이트
+                        const buyerRef = db.collection('students').doc(buyer.docId);
+                        const sellerRef = db.collection('students').doc(seller.docId);
+                        
+                        transaction.update(buyerRef, {
+                            points: buyer.points - item.price
+                        });
+                        
+                        transaction.update(sellerRef, {
+                            points: seller.points + item.price
+                        });
+                        
+                        // 상품을 판매 완료로 변경
+                        transaction.update(itemRef, {
+                            available: false,
+                            buyerId: buyer.id,
+                            buyerName: buyer.name,
+                            soldAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                        
+                        // 거래 내역 추가
+                        const transactionRef = db.collection('transactions').doc();
+                        transaction.set(transactionRef, {
+                            buyerId: buyer.id,
+                            buyerName: buyer.name,
+                            sellerId: seller.id,
+                            sellerName: seller.name,
+                            itemId: item.docId,
+                            itemTitle: item.title,
+                            price: item.price,
+                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    });
+                    
+                    return true;
+                } catch (error) {
+                    console.error('구매 오류:', error);
+                    alert(error.message || '구매 중 오류가 발생했습니다.');
+                    return false;
+                }
+            }
+            
+            // 학생 이름 업데이트
+            async updateStudentName(studentId, newName) {
+                try {
+                    const student = this.students.find(s => s.id === studentId);
+                    if (student) {
+                        await db.collection('students').doc(student.docId).update({
+                            name: newName
+                        });
+                    }
+                } catch (error) {
+                    console.error('이름 업데이트 오류:', error);
+                }
+            }
+            
+            // 학생 포인트 업데이트
+            async updateStudentPoints(studentId, newPoints) {
+                try {
+                    const student = this.students.find(s => s.id === studentId);
+                    if (student) {
+                        await db.collection('students').doc(student.docId).update({
+                            points: parseInt(newPoints)
+                        });
+                    }
+                } catch (error) {
+                    console.error('포인트 업데이트 오류:', error);
+                }
+            }
+            
+            // 학생 PIN 업데이트
+            async updateStudentPin(studentId, newPin) {
+                try {
+                    const student = this.students.find(s => s.id === studentId);
+                    if (student) {
+                        await db.collection('students').doc(student.docId).update({
+                            pin: newPin
+                        });
+                        return true;
+                    }
+                    return false;
+                } catch (error) {
+                    console.error('PIN 업데이트 오류:', error);
+                    return false;
+                }
+            }
+            
+            // 교사 설정을 DB에 저장
+            async saveTeacherSettingsToDb() {
+                try {
+                    await db.collection('settings').doc('teacher').set(this.teacherSettings);
+                } catch (error) {
+                    console.error('교사 설정 저장 오류:', error);
+                }
+            }
+            
+            // 모든 데이터 초기화
+            async resetAllData() {
+                if (confirm('정말로 모든 데이터를 초기화하시겠습니까? (학생 정보, 상품, 거래 내역이 모두 삭제됩니다)')) {
+                    try {
+                        // Firestore 컬렉션들 삭제
+                        const batch = db.batch();
+                        
+                        // 기존 데이터 삭제
+                        const studentsSnapshot = await db.collection('students').get();
+                        studentsSnapshot.forEach(doc => batch.delete(doc.ref));
+                        
+                        const itemsSnapshot = await db.collection('items').get();
+                        itemsSnapshot.forEach(doc => batch.delete(doc.ref));
+                        
+                        const transactionsSnapshot = await db.collection('transactions').get();
+                        transactionsSnapshot.forEach(doc => batch.delete(doc.ref));
+                        
+                        await batch.commit();
+                        
+                        // 기본 학생 다시 생성
+                        await this.createDefaultStudents();
+                        
+                        alert('모든 데이터가 초기화되었습니다.');
+                    } catch (error) {
+                        console.error('데이터 초기화 오류:', error);
+                        alert('데이터 초기화 중 오류가 발생했습니다.');
+                    }
+                }
+            }
+            
+            // 엑셀 데이터 처리
+            async processExcelData(data) {
+                try {
+                    const batch = db.batch();
+                    
+                    // 기존 학생 데이터 삭제
+                    const existingStudents = await db.collection('students').get();
+                    existingStudents.forEach(doc => batch.delete(doc.ref));
+                    
+                    // 새 학생 데이터 추가
+                    data.forEach((row, index) => {
+                        const number = row['번호'] || row['출석번호'] || row['No'] || row['number'] || (index + 1);
+                        const name = row['이름'] || row['성명'] || row['name'] || row['Name'] || `학생${number}`;
+                        const pin = String(row['PIN'] || row['pin'] || row['비밀번호'] || (1000 + index));
+                        const points = parseInt(row['포인트'] || row['점수'] || row['points'] || row['Points'] || 100);
+                        
+                        const studentRef = db.collection('students').doc(`student_${number}`);
+                        batch.set(studentRef, {
+                            id: parseInt(number),
+                            name: name,
+                            pin: pin.padStart(4, '0'),
+                            points: points,
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    });
+                    
+                    await batch.commit();
+                    
+                    // 교사 설정 업데이트
+                    this.teacherSettings.studentCount = data.length;
+                    await this.saveTeacherSettingsToDb();
+                    
+                } catch (error) {
+                    console.error('엑셀 데이터 처리 오류:', error);
+                    throw error;
+                }
+            }
+            
+            // 빠른 설정
+            async quickSetup(count, points) {
+                try {
+                    const batch = db.batch();
+                    
+                    // 기존 학생 데이터 삭제
+                    const existingStudents = await db.collection('students').get();
+                    existingStudents.forEach(doc => batch.delete(doc.ref));
+                    
+                    // 새 학생 데이터 생성
+                    for (let i = 1; i <= count; i++) {
+                        const studentRef = db.collection('students').doc(`student_${i}`);
+                        batch.set(studentRef, {
+                            id: i,
+                            name: `학생${i}`,
+                            pin: String(1000 + i - 1).padStart(4, '0'),
+                            points: points,
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    }
+                    
+                    await batch.commit();
+                    
+                    this.teacherSettings.studentCount = count;
+                    this.teacherSettings.defaultPoints = points;
+                    await this.saveTeacherSettingsToDb();
+                    
+                } catch (error) {
+                    console.error('빠른 설정 오류:', error);
+                    throw error;
+                }
+            }
+            
+            // 카테고리 선택
+            selectCategory(categoryId) {
+                this.selectedCategory = categoryId;
+                this.render();
+            }
+            
+            // 이미지 선택
+            handleImageSelect(file) {
+                if (file && file.type.startsWith('image/')) {
+                    this.selectedImageFile = file;
+                    this.render();
+                } else {
+                    alert('이미지 파일만 선택해주세요.');
+                }
+            }
+            
+            // 상점 카테고리 필터
+            setShopCategoryFilter(category) {
+                this.shopCategoryFilter = category;
+                this.render();
+            }
+            
+            // 상품 상세보기 모달
+            showItemDetail(item) {
+                const category = CATEGORIES.find(c => c.id === item.category);
+                const isMyItem = item.sellerId === this.currentUser.id;
+                
+                const modal = document.createElement('div');
+                modal.className = 'modal';
+                modal.innerHTML = `
+                    <div class="modal-content">
+                        <button class="modal-close" onclick="this.closest('.modal').remove()">×</button>
+                        
+                        ${item.imageUrl ? 
+                            `<img src="${item.imageUrl}" class="modal-image" alt="${item.title}">` :
+                            `<div class="modal-emoji">${item.emoji}</div>`
+                        }
+                        
+                        <div style="text-align: center; margin-bottom: 16px;">
+                            <div style="font-size: 12px; color: #9ca3af; background: #f3f4f6; padding: 4px 8px; border-radius: 12px; display: inline-block; margin-bottom: 8px;">
+                                ${category ? category.name : '📦 기타'}
+                            </div>
+                            <h2 style="color: #92400e; font-size: 24px; margin-bottom: 8px;">${item.title}</h2>
+                            <div style="font-size: 28px; font-weight: bold; color: #059669; margin-bottom: 16px;">${item.price}P</div>
+                        </div>
+                        
+                        ${item.description ? 
+                            `<div style="background: #fef3c7; padding: 12px; border-radius: 8px; margin-bottom: 16px;">
+                                <p style="color: #92400e;">${item.description}</p>
+                            </div>` : ''
+                        }
+                        
+                        <div style="text-align: center; margin-bottom: 16px; font-size: 14px; color: #9ca3af;">
+                            <p>판매자: ${item.sellerName}</p>
+                            <p>등록일: ${item.createdAt ? new Date(item.createdAt.seconds * 1000).toLocaleDateString('ko-KR') : '최근'}</p>
+                        </div>
+                        
+                        <div style="text-align: center; margin-bottom: 20px;">
+                            <div class="shop-item-status ${item.available ? 'status-available' : 'status-sold'}">
+                                ${item.available ? '🟢 판매중' : '🔴 판매완료'}
+                            </div>
+                            ${!item.available && item.buyerName ? 
+                                `<p style="font-size: 12px; color: #9ca3af; margin-top: 4px;">구매자: ${item.buyerName}</p>` : ''
+                            }
+                        </div>
+                        
+                        ${item.available && !isMyItem ? 
+                            `<button class="btn ${this.currentUser.points >= item.price ? '' : ''}" 
+                                    onclick="market.buyItemAction('${item.docId}'); this.closest('.modal').remove();"
+                                    ${this.currentUser.points < item.price ? 'disabled' : ''}>
+                                ${this.currentUser.points >= item.price ? '구매하기' : '포인트 부족'}
+                            </button>` : ''
+                        }
+                    </div>
+                `;
+                
+                modal.onclick = (e) => {
+                    if (e.target === modal) {
+                        modal.remove();
+                    }
+                };
+                
+                document.body.appendChild(modal);
+            }
+            
+            // 상품 수정 페이지로 이동
+	   editItem(itemId) {
+    		const item = this.items.find(i => i.docId === itemId);
+    		if (item && item.sellerId === this.currentUser.id) {
+		   this.editingItem = item;
+                   this.selectedCategory = item.category;
+        	   this.setPage('edit-item');
+    		} else {
+        		alert('상품을 찾을 수 없습니다.');
+                        this.setPage('my-items');
+   		}
+	     }
+
+            // 홈 화면
+            renderHome() {
+                return `
+                    <div class="mobile-container">
+                        <div class="card" style="text-align: center;">
+                            <h1 style="color: #92400e; font-size: 64px; margin-bottom: 16px;">🏪</h1>
+                            <h2 style="color: #92400e; font-size: 24px; margin-bottom: 8px;">${this.teacherSettings.className}</h2>
+                            <h3 style="color: #d97706; font-size: 18px; margin-bottom: 32px;"> 교실 시장놀이</h3>
+                            <button class="btn" onclick="market.setPage('teacher-login')">
+                                👩‍🏫 선생님 모드
+                            </button>
+                            
+                            <button class="btn btn-secondary" onclick="market.setPage('student-login')">
+                                👦 학생 모드
+                            </button>
+			    <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #fde68a; text-align: center;">
+    <p style="font-size: 12px; color: #9ca3af;">© 2025 Ji Eun Park </p>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // 교사 로그인 선택
+            renderTeacherLogin() {
+                return `
+                    <div class="mobile-container">
+                        <button class="back-btn" onclick="market.setPage('home')">
+                            ← 돌아가기
+                        </button>
+                        
+                        <div class="card" style="text-align: center;">
+                            <h2 style="color: #92400e; font-size: 24px; margin-bottom: 24px;">선생님 로그인</h2>
+                            
+                            <button class="btn" onclick="market.setPage('teacher-pin')">
+                                🔑 PIN 입력하기
+                            </button>
+                            
+                            <button class="btn btn-outline" onclick="market.setPage('teacher-settings')">
+                                ⚙️ 처음 설정하기
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // 교사 PIN 입력
+            renderTeacherPin() {
+                return `
+                    <div class="mobile-container">
+                        <button class="back-btn" onclick="market.setPage('teacher-login')">
+                            ← 돌아가기
+                        </button>
+                        
+                        <div class="card pin-container">
+                            <h2 style="color: #92400e; font-size: 24px; margin-bottom: 16px;">선생님 확인</h2>
+                            <p style="color: #d97706; margin-bottom: 24px;">교사 PIN을 입력해주세요</p>
+                            ${this.teacherSettings.isFirstTime ? 
+                                `<div style="background: #fef3c7; padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; color: #92400e;">
+                                    💡 기본 PIN: <strong>0000</strong><br>
+                                    처음 로그인 후 설정에서 변경하세요!
+                                </div>` : ''
+                            }
+                            
+                            <input type="password" id="teacherPinInput" class="input pin-input" maxlength="4" placeholder="••••">
+                            
+                            <button class="btn" onclick="market.verifyTeacherPin()">
+                                입장하기
+                            </button>
+                            
+                            <div id="teacherPinError" style="color: #dc2626; margin-top: 16px; text-align: center; display: none;">
+                                PIN 번호가 올바르지 않습니다
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // 학생 로그인
+            renderStudentLogin() {
+                return `
+                    <div class="mobile-container">
+                        <button class="back-btn" onclick="market.setPage('home')">
+                            ← 돌아가기
+                        </button>
+                        
+                        <div class="card pin-container">
+                            <h2 style="color: #92400e; font-size: 24px; margin-bottom: 16px;">학생 로그인</h2>
+                            <p style="color: #d97706; margin-bottom: 24px;">출석번호와 PIN을 입력하세요</p>
+                            
+                            <div style="margin-bottom: 16px;">
+                                <label style="display: block; color: #92400e; margin-bottom: 4px; font-weight: bold;">출석번호</label>
+                                <input type="number" id="studentNumber" class="input" placeholder="출석번호 (예: 5)" min="1" max="50">
+                            </div>
+                            
+                            <div style="margin-bottom: 24px;">
+                                <label style="display: block; color: #92400e; margin-bottom: 4px; font-weight: bold;">PIN 번호</label>
+                                <input type="password" id="studentPinInput" class="input pin-input" maxlength="4" placeholder="••••">
+                            </div>
+                            
+                            <button class="btn" onclick="market.loginByNumber()">
+                                입장하기
+                            </button>
+                            
+                            <div id="studentLoginError" style="color: #dc2626; margin-top: 16px; text-align: center; display: none;">
+                                출석번호 또는 PIN이 올바르지 않습니다
+                            </div>
+                            
+                            <div style="margin-top: 20px; padding: 12px; background: #fef3c7; border-radius: 8px;">
+                                <p style="font-size: 12px; color: #d97706; text-align: center;">
+                                    💡 출석번호는 선생님이 알려주신 번호를 입력하세요
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // 교사 설정
+            renderTeacherSettings() {
+                return `
+                    <div class="mobile-container">
+                        <button class="back-btn" onclick="market.setPage('teacher-dashboard')">
+                            ← 돌아가기
+                        </button>
+                        
+                        <div class="card">
+                            <h2 style="color: #92400e; font-size: 24px; margin-bottom: 24px; text-align: center;">교사 설정</h2>
+                            
+                            <div style="margin-bottom: 16px;">
+                                <label style="display: block; color: #92400e; margin-bottom: 4px; font-weight: bold;">학급명</label>
+                                <input type="text" id="className" class="input" value="${this.teacherSettings.className}">
+                            </div>
+                            
+                            <div style="margin-bottom: 16px;">
+                                <label style="display: block; color: #92400e; margin-bottom: 4px; font-weight: bold;">교사 PIN (4자리)</label>
+                                <input type="password" id="teacherPin" class="input" value="${this.teacherSettings.pin}" maxlength="4">
+                            </div>
+                            
+                            <div style="margin-bottom: 24px;">
+                                <label style="display: block; color: #92400e; margin-bottom: 8px; font-weight: bold;">📊 학생 명단 관리</label>
+                                
+                                <div style="background: #fef3c7; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+                                    <h4 style="color: #92400e; margin-bottom: 8px;">📥 엑셀 파일 업로드</h4>
+                                    <p style="color: #d97706; font-size: 14px; margin-bottom: 12px;">엑셀 형태: 번호 | 이름 | PIN | 포인트</p>
+                                    
+                                    <input type="file" id="excelFile" accept=".xlsx,.xls,.csv" style="margin-bottom: 12px;">
+                                    
+                                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                        <button class="btn btn-secondary" onclick="market.uploadExcel()" style="flex: 1; min-width: 120px;">
+                                            📤 업로드
+                                        </button>
+                                        <button class="btn btn-outline" onclick="market.downloadSample()" style="flex: 1; min-width: 120px;">
+                                            📋 샘플 다운로드
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div style="background: #fef3c7; padding: 16px; border-radius: 8px;">
+                                    <h4 style="color: #92400e; margin-bottom: 8px;">⚡ 빠른 설정</h4>
+                                    <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                                        <select id="quickStudentCount" class="input" style="flex: 1;">
+                                            <option value="20">20명</option>
+                                            <option value="25" selected>25명</option>
+                                            <option value="30">30명</option>
+                                            <option value="35">35명</option>
+                                        </select>
+                                        <input type="number" id="quickDefaultPoints" class="input" placeholder="기본 포인트" value="100" style="flex: 1;">
+                                    </div>
+                                    <button class="btn btn-outline" onclick="market.quickSetupAction()" style="width: 100%;">
+                                        기본 학생 목록 생성
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <button class="btn" onclick="market.saveTeacherSettings()">
+                                설정 저장
+                            </button>
+                            
+                            <div style="margin-top: 16px;">
+                                <button class="btn btn-outline" onclick="market.resetAllData()" 
+                                        style="background: #dc2626; color: white; border-color: #dc2626;">
+                                    ⚠️ 모든 데이터 초기화
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // 교사 대시보드
+            renderTeacherDashboard() {
+                return `
+                    <div class="container">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+                            <h1 style="color: #92400e; font-size: 28px;">교사 관리 페이지</h1>
+                            <div style="display: flex; gap: 8px;">
+                                <button class="btn btn-secondary" onclick="market.setPage('teacher-settings')" style="width: auto; padding: 8px 16px;">
+                                    ⚙️ 설정
+                                </button>
+                                <button class="btn btn-outline" onclick="market.logout()" style="width: auto; padding: 8px 16px;">
+                                    로그아웃
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div style="background: #dcfce7; padding: 16px; border-radius: 8px; margin-bottom: 24px; border: 2px solid #059669;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                                <div>
+                                    <h3 style="color: #059669; margin-bottom: 4px;">📊 실시간 현황</h3>
+                                    <p style="color: #047857; font-size: 14px;">학생 ${this.students.length}명 • 상품 ${this.items.filter(i => i.available).length}개 판매중 • 거래 ${this.transactions.length}건</p>
+                                </div>
+                                <div style="color: #059669; font-size: 24px;">🟢</div>
+                            </div>
+                        </div>
+                        
+                        ${this.teacherSettings.isFirstTime ? 
+                            `<div style="background: #fef3c7; padding: 16px; border-radius: 8px; margin-bottom: 24px; border: 2px solid #f59e0b;">
+                                <h3 style="color: #92400e; margin-bottom: 8px;">🔔 처음 사용하시는군요!</h3>
+                                <p style="color: #d97706; margin-bottom: 12px;">설정에서 교사 PIN을 변경하시기 바랍니다. (현재: 0000)</p>
+                                <button class="btn btn-secondary" onclick="market.setPage('teacher-settings')" style="width: auto; padding: 8px 16px;">
+                                    지금 설정하기
+                                </button>
+                            </div>` : ''
+                        }
+                        
+                        <div class="grid">
+                            <div class="card">
+                                <h3 style="color: #92400e; font-size: 20px; margin-bottom: 16px;">💰 학생 관리</h3>
+                                <div style="max-height: 400px; overflow-y: auto;">
+                                    ${this.students.map(student => `
+                                        <div class="student-points">
+                                            <div>
+                                                <input type="text" value="${student.name}" 
+                                                       onchange="market.updateStudentName(${student.id}, this.value)"
+                                                       style="border: none; background: transparent; font-weight: bold; color: #92400e;">
+                                                <div style="font-size: 12px; color: #d97706;">PIN: ${student.pin}</div>
+                                            </div>
+                                            <div style="display: flex; align-items: center; gap: 8px;">
+                                                <input type="number" value="${student.points}" 
+                                                       onchange="market.updateStudentPoints(${student.id}, this.value)"
+                                                       style="width: 80px; padding: 4px; border: 1px solid #fde68a; border-radius: 4px; text-align: center;">
+                                                <span style="color: #d97706;">P</span>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                            
+                            <div class="card">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                                    <h3 style="color: #92400e; font-size: 20px;">📋 거래 내역</h3>
+                                    <button class="btn btn-outline" onclick="market.setPage('teacher-transactions')" style="width: auto; padding: 6px 12px; font-size: 14px;">
+                                        상세 보기
+                                    </button>
+                                </div>
+                                <div style="max-height: 400px; overflow-y: auto;">
+                                    ${this.transactions.length === 0 ? 
+                                        '<p style="color: #d97706; text-align: center; padding: 32px;">아직 거래가 없습니다</p>' :
+                                        this.transactions.slice(0, 5).map(transaction => `
+                                            <div class="transaction-item">
+                                                <div style="font-size: 14px; color: #92400e; margin-bottom: 4px;">
+                                                    <strong>${transaction.buyerName}</strong> → <strong>${transaction.sellerName}</strong>
+                                                </div>
+                                                <div style="font-size: 12px; color: #d97706;">
+                                                    ${transaction.itemTitle} • ${transaction.price}P • ${transaction.timestamp ? new Date(transaction.timestamp.seconds * 1000).toLocaleString('ko-KR') : '방금'}
+                                                </div>
+                                            </div>
+                                        `).join('')
+                                    }
+                                    ${this.transactions.length > 5 ? 
+                                        '<div style="text-align: center; margin-top: 12px; font-size: 12px; color: #d97706;">더 많은 거래 내역이 있습니다</div>' : ''
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // 학생 대시보드
+            renderStudentDashboard() {
+                return `
+                    <div class="mobile-container">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                            <h1 style="color: #92400e; font-size: 20px;">${this.currentUser.name}님 환영합니다!</h1>
+                            <button class="btn btn-outline" onclick="market.logout()" style="width: auto; padding: 6px 12px; font-size: 14px;">
+                                로그아웃
+                            </button>
+                        </div>
+                        
+                        <div class="points-display">
+                            <div class="points-number">${this.currentUser.points.toLocaleString()}</div>
+                            <div class="points-label">보유 포인트</div>
+                        </div>
+                        
+                        <div style="margin-bottom: 16px;">
+                            <button class="btn" onclick="market.setPage('student-shop')">
+                                🛒 상점 구경하기
+                            </button>
+                        </div>
+                        
+                        <div style="margin-bottom: 16px;">
+                            <button class="btn btn-secondary" onclick="market.setPage('add-item')">
+                                ➕ 물건 등록하기
+                            </button>
+                        </div>
+                        
+                        <div style="margin-bottom: 16px;">
+                            <button class="btn btn-outline" onclick="market.setPage('my-items')" style="background: #dbeafe; color: #1e40af; border-color: #3b82f6;">
+                                📦 내 물건 보기
+                            </button>
+                        </div>
+                        
+                        <div style="margin-bottom: 16px;">
+                            <button class="btn btn-outline" onclick="market.setPage('change-pin')" style="background: #fef3c7; color: #92400e; border-color: #f59e0b;">
+                                🔐 PIN 번호 변경
+                            </button>
+                        </div>
+                        
+                        <div>
+                            <button class="btn btn-outline" onclick="market.setPage('my-transactions')" style="background: #f3f4f6; color: #374151; border-color: #d1d5db;">
+                                📋 내 거래 내역
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // 상점 (개선된 컴팩트 카드)
+            renderShop() {
+                const filteredItems = this.items.filter(item => 
+                    item.sellerId !== this.currentUser.id &&
+                    (this.shopCategoryFilter === 'all' || item.category === this.shopCategoryFilter)
+                );
+                
+                return `
+                    <div class="container">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                            <h1 style="color: #92400e; font-size: 28px;">🛒 상점</h1>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <div style="background: #fef3c7; padding: 8px 16px; border-radius: 8px; font-weight: bold; color: #92400e;">
+                                    ${this.currentUser.points.toLocaleString()}P
+                                </div>
+                                <button class="btn btn-outline" onclick="market.setPage('student-dashboard')" style="width: auto; padding: 8px 16px;">
+                                    ← 돌아가기
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="filter-tabs">
+                            <div class="filter-tab ${this.shopCategoryFilter === 'all' ? 'active' : ''}" 
+                                 onclick="market.setShopCategoryFilter('all')">
+                                전체 (${this.items.filter(i => i.sellerId !== this.currentUser.id).length})
+                            </div>
+                            ${CATEGORIES.map(cat => `
+                                <div class="filter-tab ${this.shopCategoryFilter === cat.id ? 'active' : ''}" 
+                                     onclick="market.setShopCategoryFilter('${cat.id}')">
+                                    ${cat.emoji} ${cat.name.split(' ')[1]} (${this.items.filter(i => i.sellerId !== this.currentUser.id && i.category === cat.id).length})
+                                </div>
+                            `).join('')}
+                        </div>
+                        
+                        ${filteredItems.length === 0 ? 
+                            `<div class="card" style="text-align: center; padding: 60px;">
+                                <h3 style="color: #d97706; margin-bottom: 16px;">상품이 없습니다</h3>
+                                <p style="color: #9ca3af;">친구들이 물건을 등록할 때까지 기다려보세요!</p>
+                            </div>` :
+                            `<div class="shop-grid">
+                                ${filteredItems.map(item => {
+                                    const category = CATEGORIES.find(c => c.id === item.category);
+                                    return `
+                                        <div class="shop-item-card" onclick="market.showItemDetail(${JSON.stringify(item).replace(/"/g, '&quot;')})">
+                                            ${item.imageUrl ? `
+                                                <div class="shop-item-image">
+                                                    <img src="${item.imageUrl}" alt="${item.title}">
+                                                </div>
+                                            ` : `
+                                                <div class="shop-item-emoji">${item.emoji}</div>
+                                            `}
+                                            <div class="shop-item-price">${item.price.toLocaleString()}P</div>
+                                            <div class="shop-item-title">${item.title}</div>
+                                            <div class="shop-item-status ${item.available ? 'status-available' : 'status-sold'}">
+                                                ${item.available ? '판매중' : '판매완료'}
+                                            </div>
+                                            ${!item.available ? 
+                                                `<div style="font-size: 12px; color: #9ca3af; text-align: center;">구매자: ${item.buyerName || '알 수 없음'}</div>` : 
+                                                ''
+                                            }
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>`
+                        }
+                    </div>
+                `;
+            }
+            
+            // 물건 등록 (이모지 선택 제거)
+            renderAddItem() {
+                return `
+                    <div class="mobile-container">
+                        <button class="back-btn" onclick="market.setPage('student-dashboard')">
+                            ← 돌아가기
+                        </button>
+                        
+                        <div class="card">
+                            <h2 style="color: #92400e; font-size: 24px; margin-bottom: 24px; text-align: center;">물건 등록하기</h2>
+                            
+                            <div style="margin-bottom: 16px;">
+                                <label style="display: block; color: #92400e; margin-bottom: 8px; font-weight: bold;">📸 상품 사진 (선택사항)</label>
+                                <div class="photo-upload ${this.selectedImageFile ? 'has-image' : ''}" onclick="document.getElementById('imageInput').click()">
+                                    ${this.selectedImageFile ? 
+                                        `<img src="${URL.createObjectURL(this.selectedImageFile)}" class="photo-preview" alt="미리보기">
+                                         <p style="margin-top: 8px; color: #059669; font-size: 14px;">✅ 사진이 선택되었습니다</p>` :
+                                        `<div style="color: #9ca3af; text-align: center;">
+                                            <div style="font-size: 48px; margin-bottom: 8px;">📸</div>
+                                            <p>사진을 선택하려면 클릭하세요</p>
+                                            <p style="font-size: 12px; margin-top: 4px;">JPG, PNG 파일만 가능</p>
+                                        </div>`
+                                    }
+                                </div>
+                                <input type="file" id="imageInput" accept="image/*" style="display: none;" 
+                                       onchange="market.handleImageSelect(this.files[0])">
+                            </div>
+                            
+                            <div style="margin-bottom: 16px;">
+                                <label style="display: block; color: #92400e; margin-bottom: 8px; font-weight: bold;">📂 카테고리 선택 *</label>
+                                <div class="category-grid">
+                                    ${CATEGORIES.map(category => `
+                                        <button type="button" class="category-btn ${this.selectedCategory === category.id ? 'selected' : ''}" 
+                                                onclick="market.selectCategory('${category.id}')">
+                                            ${category.name}
+                                        </button>
+                                    `).join('')}
+                                </div>
+                            </div>
+                            
+                            <div style="margin-bottom: 16px;">
+                                <label style="display: block; color: #92400e; margin-bottom: 4px; font-weight: bold;">물건 이름 *</label>
+                                <input type="text" id="itemTitle" class="input" placeholder="예: 새 연필통">
+                            </div>
+                            
+                            <div style="margin-bottom: 16px;">
+                                <label style="display: block; color: #92400e; margin-bottom: 4px; font-weight: bold;">설명</label>
+                                <input type="text" id="itemDescription" class="input" placeholder="예: 거의 새 것이에요!">
+                            </div>
+                            
+                            <div style="margin-bottom: 24px;">
+                                <label style="display: block; color: #92400e; margin-bottom: 4px; font-weight: bold;">가격 *</label>
+                                <select id="itemPrice" class="input">
+                                    <option value="">가격을 선택하세요</option>
+                                    <option value="500">500P</option>
+                                    <option value="1000">1,000P</option>
+                                    <option value="1500">1,500P</option>
+                                    <option value="2000">2,000P</option>
+                                    <option value="2500">2,500P</option>
+                                    <option value="3000">3,000P</option>
+                                    <option value="3500">3,500P</option>
+                                    <option value="4000">4,000P</option>
+                                    <option value="4500">4,500P</option>
+                                    <option value="5000">5,000P</option>
+                                </select>
+                            </div>
+                            
+                            <button class="btn" onclick="market.addItemAction()" 
+                                    ${!this.selectedCategory ? 'disabled' : ''}>
+                                등록하기
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // 물건 수정
+            renderEditItem() {               
+                return `
+                    <div class="mobile-container">
+                        <button class="back-btn" onclick="market.setPage('my-items')">
+                            ← 돌아가기
+                        </button>
+                        
+                        <div class="card">
+                            <h2 style="color: #92400e; font-size: 24px; margin-bottom: 24px; text-align: center;">물건 수정하기</h2>
+                            
+                            <div style="margin-bottom: 16px;">
+                                <label style="display: block; color: #92400e; margin-bottom: 8px; font-weight: bold;">📸 상품 사진</label>
+                                <div class="photo-upload ${this.selectedImageFile || this.editingItem.imageUrl ? 'has-image' : ''}" onclick="document.getElementById('editImageInput').click()">
+                                    ${this.selectedImageFile ? 
+                                        `<img src="${URL.createObjectURL(this.selectedImageFile)}" class="photo-preview" alt="미리보기">
+                                         <p style="margin-top: 8px; color: #059669; font-size: 14px;">✅ 새 사진이 선택되었습니다</p>` :
+                                        this.editingItem.imageUrl ? 
+                                        `<img src="${this.editingItem.imageUrl}" class="photo-preview" alt="현재 사진">
+                                         <p style="margin-top: 8px; color: #92400e; font-size: 14px;">현재 사진 (클릭하여 변경)</p>` :
+                                        `<div style="color: #9ca3af; text-align: center;">
+                                            <div style="font-size: 48px; margin-bottom: 8px;">📸</div>
+                                            <p>사진을 선택하려면 클릭하세요</p>
+                                            <p style="font-size: 12px; margin-top: 4px;">JPG, PNG 파일만 가능</p>
+                                        </div>`
+                                    }
+                                </div>
+                                <input type="file" id="editImageInput" accept="image/*" style="display: none;" 
+                                       onchange="market.handleImageSelect(this.files[0])">
+                            </div>
+                            
+                            <div style="margin-bottom: 16px;">
+                                <label style="display: block; color: #92400e; margin-bottom: 8px; font-weight: bold;">📂 카테고리 선택 *</label>
+                                <div class="category-grid">
+                                    ${CATEGORIES.map(category => `
+                                        <button type="button" class="category-btn ${this.selectedCategory === category.id ? 'selected' : ''}" 
+                                                onclick="market.selectCategory('${category.id}')">
+                                            ${category.name}
+                                        </button>
+                                    `).join('')}
+                                </div>
+                            </div>
+                            
+                            <div style="margin-bottom: 16px;">
+                                <label style="display: block; color: #92400e; margin-bottom: 4px; font-weight: bold;">물건 이름 *</label>
+                                <input type="text" id="editItemTitle" class="input" value="${this.editingItem.title}">
+                            </div>
+                            
+                            <div style="margin-bottom: 16px;">
+                                <label style="display: block; color: #92400e; margin-bottom: 4px; font-weight: bold;">설명</label>
+                                <input type="text" id="editItemDescription" class="input" value="${this.editingItem.description}">
+                            </div>
+                            
+                            <div style="margin-bottom: 24px;">
+                                <label style="display: block; color: #92400e; margin-bottom: 4px; font-weight: bold;">가격 *</label>
+                                <select id="editItemPrice" class="input">
+                                    <option value="">가격을 선택하세요</option>
+                                    <option value="500" ${this.editingItem.price === 500 ? 'selected' : ''}>500P</option>
+                                    <option value="1000" ${this.editingItem.price === 1000 ? 'selected' : ''}>1,000P</option>
+                                    <option value="1500" ${this.editingItem.price === 1500 ? 'selected' : ''}>1,500P</option>
+                                    <option value="2000" ${this.editingItem.price === 2000 ? 'selected' : ''}>2,000P</option>
+                                    <option value="2500" ${this.editingItem.price === 2500 ? 'selected' : ''}>2,500P</option>
+                                    <option value="3000" ${this.editingItem.price === 3000 ? 'selected' : ''}>3,000P</option>
+                                    <option value="3500" ${this.editingItem.price === 3500 ? 'selected' : ''}>3,500P</option>
+                                    <option value="4000" ${this.editingItem.price === 4000 ? 'selected' : ''}>4,000P</option>
+                                    <option value="4500" ${this.editingItem.price === 4500 ? 'selected' : ''}>4,500P</option>
+                                    <option value="5000" ${this.editingItem.price === 5000 ? 'selected' : ''}>5,000P</option>
+                                </select>
+                            </div>
+                            
+                            <button class="btn" onclick="market.updateItemAction()" 
+                                    ${!this.selectedCategory ? 'disabled' : ''}>
+                                수정 완료
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // 내 물건 보기 (가로 레이아웃)
+            renderMyItems() {
+                const myItems = this.items.filter(item => item.sellerId === this.currentUser.id);
+                
+                return `
+                    <div class="container">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                            <h1 style="color: #92400e; font-size: 24px;">내가 등록한 물건</h1>
+                            <button class="btn btn-outline" onclick="market.setPage('student-dashboard')" style="width: auto; padding: 8px 16px;">
+                                ← 돌아가기
+                            </button>
+                        </div>
+                        
+                        ${myItems.length === 0 ? 
+                            `<div class="card" style="text-align: center; padding: 60px;">
+                                <h3 style="color: #d97706; margin-bottom: 16px;">등록한 물건이 없습니다</h3>
+                                <p style="color: #9ca3af; margin-bottom: 24px;">첫 번째 물건을 등록해보세요!</p>
+                                <button class="btn" onclick="market.setPage('add-item')">물건 등록하기</button>
+                            </div>` :
+                            `<div>
+                                ${myItems.map(item => {
+                                    return `
+                                        <div class="my-item-card ${!item.available ? 'sold' : ''}">
+                                            ${item.imageUrl ? `
+                                                <div class="my-item-image">
+                                                    <img src="${item.imageUrl}" alt="${item.title}">
+                                                </div>
+                                            ` : `
+                                                <div class="my-item-image">
+                                                    <div class="my-item-emoji">${item.emoji}</div>
+                                                </div>
+                                            `}
+                                            
+                                            <div class="my-item-info">
+                                                <div class="my-item-title">${item.title}</div>
+                                                <div class="my-item-price">${item.price.toLocaleString()}P</div>
+                                                <div class="my-item-status">
+                                                    ${item.available ? 
+                                                        '<span style="color: #059669; font-weight: bold;">🟢 판매중</span>' : 
+                                                        `<span style="color: #dc2626; font-weight: bold;">🔴 판매완료</span>${item.buyerName ? ` • 구매자: ${item.buyerName}` : ''}`
+                                                    }
+                                                </div>
+                                                
+                                                ${item.available ? `
+                                                    <div class="my-item-actions">
+                                                        <button class="btn btn-small btn-outline" onclick="market.editItem('${item.docId}')">
+                                                            수정
+                                                        </button>
+                                                        <button class="btn btn-small btn-danger" onclick="market.deleteItemAction('${item.docId}')">
+                                                            삭제
+                                                        </button>
+                                                    </div>
+                                                ` : ''}
+                                            </div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>`
+                        }
+                    </div>
+                `;
+            }
+            
+            // 학생 거래 내역
+            renderMyTransactions() {
+                const myPurchases = this.transactions.filter(t => t.buyerId === this.currentUser.id);
+                const mySales = this.transactions.filter(t => t.sellerId === this.currentUser.id);
+                
+                return `
+                    <div class="container">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                            <h1 style="color: #92400e; font-size: 24px;">내 거래 내역</h1>
+                            <button class="btn btn-outline" onclick="market.setPage('student-dashboard')" style="width: auto; padding: 8px 16px;">
+                                ← 돌아가기
+                            </button>
+                        </div>
+                        
+                        <div class="grid">
+                            <div class="card">
+                                <h3 style="color: #92400e; font-size: 20px; margin-bottom: 16px;">📥 구매한 물건 (${myPurchases.length}개)</h3>
+                                <div style="max-height: 400px; overflow-y: auto;">
+                                    ${myPurchases.length === 0 ? 
+                                        '<p style="color: #d97706; text-align: center; padding: 32px;">아직 구매한 물건이 없습니다</p>' :
+                                        myPurchases.map(transaction => `
+                                            <div class="transaction-item">
+                                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 4px;">
+                                                    <div style="font-size: 16px; color: #92400e; font-weight: bold;">
+                                                        ${transaction.itemTitle}
+                                                    </div>
+                                                    <div style="font-size: 18px; color: #dc2626; font-weight: bold;">
+                                                        -${transaction.price.toLocaleString()}P
+                                                    </div>
+                                                </div>
+                                                <div style="font-size: 14px; color: #d97706;">
+                                                    판매자: ${transaction.sellerName}
+                                                </div>
+                                                <div style="font-size: 12px; color: #9ca3af;">
+                                                    ${transaction.timestamp ? new Date(transaction.timestamp.seconds * 1000).toLocaleString('ko-KR') : '방금'}
+                                                </div>
+                                            </div>
+                                        `).join('')
+                                    }
+                                </div>
+                            </div>
+                            
+                            <div class="card">
+                                <h3 style="color: #92400e; font-size: 20px; margin-bottom: 16px;">📤 판매한 물건 (${mySales.length}개)</h3>
+                                <div style="max-height: 400px; overflow-y: auto;">
+                                    ${mySales.length === 0 ? 
+                                        '<p style="color: #d97706; text-align: center; padding: 32px;">아직 판매한 물건이 없습니다</p>' :
+                                        mySales.map(transaction => `
+                                            <div class="transaction-item">
+                                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 4px;">
+                                                    <div style="font-size: 16px; color: #92400e; font-weight: bold;">
+                                                        ${transaction.itemTitle}
+                                                    </div>
+                                                    <div style="font-size: 18px; color: #059669; font-weight: bold;">
+                                                        +${transaction.price.toLocaleString()}P
+                                                    </div>
+                                                </div>
+                                                <div style="font-size: 14px; color: #d97706;">
+                                                    구매자: ${transaction.buyerName}
+                                                </div>
+                                                <div style="font-size: 12px; color: #9ca3af;">
+                                                    ${transaction.timestamp ? new Date(transaction.timestamp.seconds * 1000).toLocaleString('ko-KR') : '방금'}
+                                                </div>
+                                            </div>
+                                        `).join('')
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card" style="margin-top: 20px;">
+                            <h3 style="color: #92400e; font-size: 20px; margin-bottom: 16px;">💰 포인트 요약</h3>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px;">
+                                <div style="text-align: center; background: #fef3c7; padding: 16px; border-radius: 8px;">
+                                    <div style="font-size: 24px; font-weight: bold; color: #92400e;">
+                                        ${this.currentUser.points.toLocaleString()}P
+                                    </div>
+                                    <div style="font-size: 14px; color: #d97706;">현재 보유</div>
+                                </div>
+                                <div style="text-align: center; background: #fee2e2; padding: 16px; border-radius: 8px;">
+                                    <div style="font-size: 24px; font-weight: bold; color: #dc2626;">
+                                        -${myPurchases.reduce((sum, t) => sum + t.price, 0).toLocaleString()}P
+                                    </div>
+                                    <div style="font-size: 14px; color: #991b1b;">총 지출</div>
+                                </div>
+                                <div style="text-align: center; background: #dcfce7; padding: 16px; border-radius: 8px;">
+                                    <div style="font-size: 24px; font-weight: bold; color: #059669;">
+                                        +${mySales.reduce((sum, t) => sum + t.price, 0).toLocaleString()}P
+                                    </div>
+                                    <div style="font-size: 14px; color: #047857;">총 수입</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // PIN 변경 페이지
+            renderChangePin() {
+                return `
+                    <div class="mobile-container">
+                        <button class="back-btn" onclick="market.setPage('student-dashboard')">
+                            ← 돌아가기
+                        </button>
+                        
+                        <div class="card">
+                            <h2 style="color: #92400e; font-size: 24px; margin-bottom: 24px; text-align: center;">🔐 PIN 번호 변경</h2>
+                            
+                            <div style="background: #fef3c7; padding: 16px; border-radius: 8px; margin-bottom: 24px;">
+                                <p style="color: #92400e; font-size: 14px; text-align: center;">
+                                    <strong>현재 PIN:</strong> ${this.currentUser.pin}<br>
+                                    <span style="color: #d97706; font-size: 12px;">보안을 위해 새로운 PIN으로 변경해보세요!</span>
+                                </p>
+                            </div>
+                            
+                            <div style="margin-bottom: 16px;">
+                                <label style="display: block; color: #92400e; margin-bottom: 4px; font-weight: bold;">현재 PIN 번호 *</label>
+                                <input type="password" id="currentPin" class="input pin-input" maxlength="4" placeholder="••••">
+                            </div>
+                            
+                            <div style="margin-bottom: 16px;">
+                                <label style="display: block; color: #92400e; margin-bottom: 4px; font-weight: bold;">새 PIN 번호 *</label>
+                                <input type="password" id="newPin" class="input pin-input" maxlength="4" placeholder="••••">
+                            </div>
+                            
+                            <div style="margin-bottom: 24px;">
+                                <label style="display: block; color: #92400e; margin-bottom: 4px; font-weight: bold;">새 PIN 번호 재확인 *</label>
+                                <input type="password" id="confirmPin" class="input pin-input" maxlength="4" placeholder="••••">
+                            </div>
+                            
+                            <button class="btn" onclick="market.changePinAction()">
+                                PIN 번호 변경
+                            </button>
+                            
+                            <div id="changePinError" style="color: #dc2626; margin-top: 16px; text-align: center; display: none;">
+                            </div>
+                            
+                            <div style="margin-top: 20px; padding: 12px; background: #e0f2fe; border-radius: 8px; border-left: 4px solid #0ea5e9;">
+                                <h4 style="color: #0369a1; margin-bottom: 8px;">💡 PIN 번호 안전 수칙</h4>
+                                <ul style="color: #0369a1; font-size: 12px; margin-left: 16px;">
+                                    <li>4자리 숫자로 설정하세요</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // 교사 거래 내역 상세
+            renderTeacherTransactions() {
+                const selectedStudent = this.selectedStudentForTransactions || null;
+                let filteredTransactions = this.transactions;
+                
+                if (selectedStudent) {
+                    filteredTransactions = this.transactions.filter(t => 
+                        t.buyerId === selectedStudent.id || t.sellerId === selectedStudent.id
+                    );
+                }
+                
+                return `
+                    <div class="container">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                            <h1 style="color: #92400e; font-size: 24px;">거래 내역 상세</h1>
+                            <button class="btn btn-outline" onclick="market.setPage('teacher-dashboard')" style="width: auto; padding: 8px 16px;">
+                                ← 돌아가기
+                            </button>
+                        </div>
+                        
+                        <div class="card" style="margin-bottom: 20px;">
+                            <h3 style="color: #92400e; font-size: 18px; margin-bottom: 16px;">🔍 학생별 검색</h3>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                <button class="btn ${!selectedStudent ? 'btn-secondary' : 'btn-outline'}" 
+                                        onclick="market.filterTransactionsByStudent(null)" 
+                                        style="width: auto; padding: 8px 16px;">
+                                    전체 보기
+                                </button>
+                                ${this.students.map(student => `
+                                    <button class="btn ${selectedStudent && selectedStudent.id === student.id ? 'btn-secondary' : 'btn-outline'}" 
+                                            onclick="market.filterTransactionsByStudent(${student.id})" 
+                                            style="width: auto; padding: 8px 16px; font-size: 14px;">
+                                        ${student.name}
+                                    </button>
+                                `).join('')}
+                            </div>
+                        </div>
+                        
+                        <div class="card">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                                <h3 style="color: #92400e; font-size: 18px;">
+                                    📋 거래 내역 
+                                    ${selectedStudent ? `(${selectedStudent.name})` : `(전체 ${filteredTransactions.length}건)`}
+                                </h3>
+                            </div>
+                            
+                            <div style="max-height: 500px; overflow-y: auto;">
+                                ${filteredTransactions.length === 0 ? 
+                                    '<p style="color: #d97706; text-align: center; padding: 32px;">거래 내역이 없습니다</p>' :
+                                    filteredTransactions.map(transaction => `
+                                        <div class="transaction-item">
+                                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                                                <div>
+                                                    <div style="font-size: 16px; color: #92400e; font-weight: bold; margin-bottom: 4px;">
+                                                        ${transaction.itemTitle}
+                                                    </div>
+                                                    <div style="font-size: 14px; color: #d97706;">
+                                                        <strong>${transaction.buyerName}</strong> → <strong>${transaction.sellerName}</strong>
+                                                    </div>
+                                                </div>
+                                                <div style="text-align: right;">
+                                                    <div style="font-size: 18px; font-weight: bold; color: #92400e;">
+                                                        ${transaction.price.toLocaleString()}P
+                                                    </div>
+                                                    <div style="font-size: 12px; color: #9ca3af;">
+                                                        ${transaction.timestamp ? new Date(transaction.timestamp.seconds * 1000).toLocaleString('ko-KR') : '방금'}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    `).join('')
+                                }
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // 이벤트 리스너 연결
+            attachEventListeners() {
+                // 교사 PIN 입력 시 엔터키 처리
+                const teacherPinInput = document.getElementById('teacherPinInput');
+                if (teacherPinInput) {
+                    teacherPinInput.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') {
+                            this.verifyTeacherPin();
+                        }
+                    });
+                }
+                
+                // 학생 로그인 시 엔터키 처리
+                const studentPinInput = document.getElementById('studentPinInput');
+                if (studentPinInput) {
+                    studentPinInput.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') {
+                            this.loginByNumber();
+                        }
+                    });
+                }
+                
+                const studentNumber = document.getElementById('studentNumber');
+                if (studentNumber) {
+                    studentNumber.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') {
+                            document.getElementById('studentPinInput').focus();
+                        }
+                    });
+                }
+                
+                // PIN 변경 시 엔터키 처리
+                const currentPinInput = document.getElementById('currentPin');
+                const newPinInput = document.getElementById('newPin');
+                const confirmPinInput = document.getElementById('confirmPin');
+                
+                if (currentPinInput) {
+                    currentPinInput.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') {
+                            document.getElementById('newPin').focus();
+                        }
+                    });
+                }
+                
+                if (newPinInput) {
+                    newPinInput.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') {
+                            document.getElementById('confirmPin').focus();
+                        }
+                    });
+                }
+                
+                if (confirmPinInput) {
+                    confirmPinInput.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') {
+                            this.changePinAction();
+                        }
+                    });
+                }
+            }
+            
+            // 엑셀 업로드
+            async uploadExcel() {
+                const fileInput = document.getElementById('excelFile');
+                const file = fileInput.files[0];
+                
+                if (!file) {
+                    alert('파일을 선택해주세요.');
+                    return;
+                }
+                
+                try {
+                    const data = await this.readExcelFile(file);
+                    await this.processExcelData(data);
+                    alert(`${data.length}명의 학생 정보가 업로드되었습니다!`);
+                } catch (error) {
+                    alert('파일을 읽는 중 오류가 발생했습니다. 파일 형식을 확인해주세요.');
+                    console.error(error);
+                }
+            }
+            
+            // 엑셀 파일 읽기
+            async readExcelFile(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const data = new Uint8Array(e.target.result);
+                            const workbook = XLSX.read(data, { type: 'array' });
+                            const sheetName = workbook.SheetNames[0];
+                            const worksheet = workbook.Sheets[sheetName];
+                            const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                            resolve(jsonData);
+                        } catch (error) {
+                            reject(error);
+                        }
+                    };
+                    reader.onerror = reject;
+                    reader.readAsArrayBuffer(file);
+                });
+            }
+            
+            // 샘플 엑셀 다운로드
+            downloadSample() {
+                const sampleData = [
+                    { '번호': 1, '이름': '김철수', 'PIN': '1234', '포인트': 100 },
+                    { '번호': 2, '이름': '박영희', 'PIN': '5678', '포인트': 150 },
+                    { '번호': 3, '이름': '이민준', 'PIN': '9012', '포인트': 120 },
+                    { '번호': 4, '이름': '최지원', 'PIN': '3456', '포인트': 100 },
+                    { '번호': 5, '이름': '정수현', 'PIN': '7890', '포인트': 180 }
+                ];
+                
+                const ws = XLSX.utils.json_to_sheet(sampleData);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "학생명단");
+                XLSX.writeFile(wb, "학생명단_샘플.xlsx");
+            }
+            
+            // 빠른 설정 액션
+            async quickSetupAction() {
+                const count = parseInt(document.getElementById('quickStudentCount').value);
+                const points = parseInt(document.getElementById('quickDefaultPoints').value);
+                
+                try {
+                    await this.quickSetup(count, points);
+                    alert(`${count}명의 학생 목록이 생성되었습니다!`);
+                } catch (error) {
+                    alert('학생 목록 생성 중 오류가 발생했습니다.');
+                    console.error(error);
+                }
+            }
+            
+            // 출석번호로 로그인
+            loginByNumber() {
+                const studentNumber = parseInt(document.getElementById('studentNumber').value);
+                const pin = document.getElementById('studentPinInput').value;
+                const errorDiv = document.getElementById('studentLoginError');
+                
+                if (!studentNumber || !pin) {
+                    errorDiv.textContent = '출석번호와 PIN을 모두 입력해주세요';
+                    errorDiv.style.display = 'block';
+                    return;
+                }
+                
+                const student = this.students.find(s => s.id === studentNumber);
+                
+                if (!student) {
+                    errorDiv.textContent = '존재하지 않는 출석번호입니다';
+                    errorDiv.style.display = 'block';
+                    return;
+                }
+                
+                if (student.pin !== pin) {
+                    errorDiv.textContent = 'PIN 번호가 올바르지 않습니다';
+                    errorDiv.style.display = 'block';
+                    document.getElementById('studentPinInput').value = '';
+                    return;
+                }
+                
+                // 로그인 성공
+                this.setUser(student);
+                this.setPage('student-dashboard');
+            }
+            
+            // 교사 설정 저장
+            async saveTeacherSettings() {
+                const className = document.getElementById('className').value;
+                const teacherPin = document.getElementById('teacherPin').value;
+                
+                if (!className || !teacherPin || teacherPin.length !== 4) {
+                    alert('학급명과 교사 PIN(4자리)을 올바르게 입력해주세요.');
+                    return;
+                }
+                
+                try {
+                    // 설정 업데이트
+                    this.teacherSettings.className = className;
+                    this.teacherSettings.pin = teacherPin;
+                    this.teacherSettings.isFirstTime = false;
+                    
+                    await this.saveTeacherSettingsToDb();
+                    
+                    alert('설정이 저장되었습니다!');
+                    this.setPage('teacher-dashboard');
+                } catch (error) {
+                    alert('설정 저장 중 오류가 발생했습니다.');
+                    console.error(error);
+                }
+            }
+            
+            // 액션 메서드들
+            verifyTeacherPin() {
+                const pin = document.getElementById('teacherPinInput').value;
+                const errorDiv = document.getElementById('teacherPinError');
+                
+                if (pin === this.teacherSettings.pin) {
+                    this.setUser({ id: 'teacher', name: '선생님', role: 'teacher' });
+                    this.setPage('teacher-dashboard');
+                } else {
+                    errorDiv.style.display = 'block';
+                    document.getElementById('teacherPinInput').value = '';
+                }
+            }
+            
+            // 학생별 거래 필터링
+            filterTransactionsByStudent(studentId) {
+                if (studentId) {
+                    this.selectedStudentForTransactions = this.students.find(s => s.id === studentId);
+                } else {
+                    this.selectedStudentForTransactions = null;
+                }
+                this.render();
+            }
+            
+            logout() {
+                this.setUser(null);
+                this.selectedStudent = null;
+                this.selectedStudentForTransactions = null;
+                this.selectedCategory = '';
+                this.selectedImageFile = null;
+                this.editingItem = null;
+                this.setPage('home');
+            }
+            
+            async addItemAction() {
+                const title = document.getElementById('itemTitle').value;
+                const description = document.getElementById('itemDescription').value;
+                const price = document.getElementById('itemPrice').value;
+                
+                if (!title || !price || !this.selectedCategory) {
+                    alert('모든 필수 항목을 입력해주세요.');
+                    return;
+                }
+                
+                try {
+                    let imageUrl = null;
+                    
+                    // 이미지가 선택된 경우 업로드
+                    if (this.selectedImageFile) {
+                        imageUrl = await this.uploadImage(this.selectedImageFile);
+                    }
+                    
+                    if (await this.addItem(title, description, price, this.selectedCategory, imageUrl)) {
+                        alert('물건이 성공적으로 등록되었습니다!');
+                        this.setPage('student-shop');
+                    } else {
+                        alert('물건 등록 중 오류가 발생했습니다.');
+                    }
+                } catch (error) {
+                    console.error('물건 등록 오류:', error);
+                    alert('물건 등록 중 오류가 발생했습니다.');
+                }
+            }
+            
+            async updateItemAction() {
+                const title = document.getElementById('editItemTitle').value;
+                const description = document.getElementById('editItemDescription').value;
+                const price = document.getElementById('editItemPrice').value;
+                
+                if (!title || !price || !this.selectedCategory) {
+                    alert('모든 필수 항목을 입력해주세요.');
+                    return;
+                }
+                
+                try {
+                    let imageUrl = null;
+                    
+                    // 새 이미지가 선택된 경우만 업로드
+                    if (this.selectedImageFile) {
+                        imageUrl = await this.uploadImage(this.selectedImageFile);
+                    }
+                    
+                    if (await this.updateItem(this.editingItem.docId, title, description, price, this.selectedCategory, imageUrl)) {
+                        alert('물건이 성공적으로 수정되었습니다!');
+                        this.setPage('my-items');
+                    } else {
+                        alert('물건 수정 중 오류가 발생했습니다.');
+                    }
+                } catch (error) {
+                    console.error('물건 수정 오류:', error);
+                    alert('물건 수정 중 오류가 발생했습니다.');
+                }
+            }
+            
+            async deleteItemAction(itemId) {
+                if (await this.deleteItem(itemId)) {
+                    alert('물건이 삭제되었습니다.');
+                } else {
+                    alert('물건 삭제 중 오류가 발생했습니다.');
+                }
+            }
+            
+            async buyItemAction(itemDocId) {
+                const item = this.items.find(i => i.docId === itemDocId);
+                if (item && await this.buyItem(item)) {
+                    alert(`${item.title}을(를) 성공적으로 구매했습니다!`);
+                }
+            }
+            
+            // PIN 변경 액션
+            async changePinAction() {
+                const currentPin = document.getElementById('currentPin').value;
+                const newPin = document.getElementById('newPin').value;
+                const confirmPin = document.getElementById('confirmPin').value;
+                const errorDiv = document.getElementById('changePinError');
+                
+                // 입력값 검증
+                if (!currentPin || !newPin || !confirmPin) {
+                    errorDiv.textContent = '모든 항목을 입력해주세요';
+                    errorDiv.style.display = 'block';
+                    return;
+                }
+                
+                // 현재 PIN 확인
+                if (currentPin !== this.currentUser.pin) {
+                    errorDiv.textContent = '현재 PIN이 올바르지 않습니다';
+                    errorDiv.style.display = 'block';
+                    document.getElementById('currentPin').value = '';
+                    return;
+                }
+                
+                // 새 PIN 형식 검증
+                if (newPin.length !== 4 || !/^\d{4}$/.test(newPin)) {
+                    errorDiv.textContent = 'PIN은 4자리 숫자여야 합니다';
+                    errorDiv.style.display = 'block';
+                    return;
+                }
+                
+                // 새 PIN 확인
+                if (newPin !== confirmPin) {
+                    errorDiv.textContent = '새 PIN이 일치하지 않습니다';
+                    errorDiv.style.display = 'block';
+                    document.getElementById('confirmPin').value = '';
+                    return;
+                }
+                
+                // 같은 PIN인지 확인
+                if (currentPin === newPin) {
+                    errorDiv.textContent = '현재 PIN과 같은 번호입니다. 다른 번호를 입력해주세요';
+                    errorDiv.style.display = 'block';
+                    return;
+                }
+                
+                try {
+                    // PIN 업데이트
+                    const success = await this.updateStudentPin(this.currentUser.id, newPin);
+                    
+                    if (success) {
+                        // 현재 사용자 정보 업데이트
+                        this.currentUser.pin = newPin;
+                        
+                        alert('PIN 번호가 성공적으로 변경되었습니다!');
+                        this.setPage('student-dashboard');
+                    } else {
+                        errorDiv.textContent = 'PIN 변경 중 오류가 발생했습니다';
+                        errorDiv.style.display = 'block';
+                    }
+                } catch (error) {
+                    console.error('PIN 변경 오류:', error);
+                    errorDiv.textContent = 'PIN 변경 중 오류가 발생했습니다';
+                    errorDiv.style.display = 'block';
+                }
+            }
+            
+            // 렌더링
+            render() {
+                const app = document.getElementById('app');
+                
+                switch(this.currentPage) {
+                    case 'teacher-login':
+                        app.innerHTML = this.renderTeacherLogin();
+                        break;
+                    case 'teacher-pin':
+                        app.innerHTML = this.renderTeacherPin();
+                        break;
+                    case 'teacher-settings':
+                        app.innerHTML = this.renderTeacherSettings();
+                        break;
+                    case 'student-login':
+                        app.innerHTML = this.renderStudentLogin();
+                        break;
+                    case 'teacher-dashboard':
+                        app.innerHTML = this.renderTeacherDashboard();
+                        break;
+                    case 'student-dashboard':
+                        app.innerHTML = this.renderStudentDashboard();
+                        break;
+                    case 'student-shop':
+                        app.innerHTML = this.renderShop();
+                        break;
+                    case 'add-item':
+                        app.innerHTML = this.renderAddItem();
+                        break;
+                    case 'edit-item':
+                        app.innerHTML = this.renderEditItem();
+                        break;
+                    case 'my-items':
+                        app.innerHTML = this.renderMyItems();
+                        break;
+                    case 'my-transactions':
+                        app.innerHTML = this.renderMyTransactions();
+                        break;
+                    case 'change-pin':
+                        app.innerHTML = this.renderChangePin();
+                        break;
+                    case 'teacher-transactions':
+                        app.innerHTML = this.renderTeacherTransactions();
+                        break;
+                    default:
+                        app.innerHTML = this.renderHome();
+                }
+                
+                this.attachEventListeners();
+            }
+            
+            // 정리
+            destroy() {
+                this.unsubscribers.forEach(unsubscribe => unsubscribe());
+            }
+        }
+
+        // 앱 시작
+        const market = new ClassMarket();
+        
+        // 페이지 언로드 시 리스너 정리
+        window.addEventListener('beforeunload', () => {
+            market.destroy();
+        });
+    </script>
+</body>
+</html>
